@@ -21,15 +21,13 @@
 #include "bt_pbap_client.h"
 
 
-struct bt_memp_t
-{
+struct bt_memp_t {
     struct bt_memp_t *next;
 };
 
 static struct bt_memp_t *memp_tab[MEMP_BT_MAX];
 
-static const uint16_t memp_sizes[MEMP_BT_MAX] =
-{
+static const uint16_t memp_sizes[MEMP_BT_MAX] = {
     sizeof(struct hci_pcb_t),
     sizeof(struct hci_link_t),
     sizeof(struct hci_inq_res_t),
@@ -52,8 +50,7 @@ static const uint16_t memp_sizes[MEMP_BT_MAX] =
     PBUF_POOL_BUFSIZE,
 };
 
-static const uint16_t memp_num[MEMP_BT_MAX] =
-{
+static const uint16_t memp_num[MEMP_BT_MAX] = {
     MEMP_NUM_HCI_PCB,
     MEMP_NUM_HCI_LINK,
     MEMP_NUM_HCI_INQ,
@@ -76,65 +73,68 @@ static const uint16_t memp_num[MEMP_BT_MAX] =
     MEMP_NUM_BT_PBUF,
 };
 
-static uint8_t memp_memory[(MEMP_NUM_HCI_PCB *
-                         MEM_ALIGN_SIZE(sizeof(struct hci_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_HCI_LINK *
-                         MEM_ALIGN_SIZE(sizeof(struct hci_link_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_HCI_INQ *
-                         MEM_ALIGN_SIZE(sizeof(struct hci_inq_res_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_L2CAP_PCB *
-                         MEM_ALIGN_SIZE(sizeof(struct l2cap_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_L2CAP_PCB_LISTEN *
-                         MEM_ALIGN_SIZE(sizeof(struct l2cap_pcb_listen_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_L2CAP_SIG *
-                         MEM_ALIGN_SIZE(sizeof(struct l2cap_sig_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_L2CAP_SEG *
-                         MEM_ALIGN_SIZE(sizeof(struct l2cap_seg_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_SDP_PCB *
-                         MEM_ALIGN_SIZE(sizeof(struct sdp_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_SDP_RECORD *
-                         MEM_ALIGN_SIZE(sizeof(struct sdp_record_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_RFCOMM_PCB *
-                         MEM_ALIGN_SIZE(sizeof(struct rfcomm_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_RFCOMM_PCB_LISTEN *
-                         MEM_ALIGN_SIZE(sizeof(struct rfcomm_pcb_listen_t) +
-                                        sizeof(struct bt_memp_t)) +
-                          MEMP_NUM_OBEX *
-                         MEM_ALIGN_SIZE(sizeof(struct obex_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_AVDTP *
-                         MEM_ALIGN_SIZE(sizeof(struct avdtp_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_AVDTP_SEP *
-                         MEM_ALIGN_SIZE(sizeof(struct avdtp_sep_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_AVCTP *
-                         MEM_ALIGN_SIZE(sizeof(struct avctp_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_HFP *
-                         MEM_ALIGN_SIZE(sizeof(struct hfp_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_A2DP *
-                         MEM_ALIGN_SIZE(sizeof(struct a2dp_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_SPP *
-                         MEM_ALIGN_SIZE(sizeof(struct spp_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_PBAP *
-                         MEM_ALIGN_SIZE(sizeof(struct pbap_pcb_t) +
-                                        sizeof(struct bt_memp_t)) +
-                         MEMP_NUM_BT_PBUF *
-                         MEM_ALIGN_SIZE(0x500))];
+static uint8_t memp_memory[(
+#if 0
+							MEMP_NUM_HCI_PCB *
+                            MEM_ALIGN_SIZE(sizeof(struct hci_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_HCI_LINK *
+                            MEM_ALIGN_SIZE(sizeof(struct hci_link_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_HCI_INQ *
+                            MEM_ALIGN_SIZE(sizeof(struct hci_inq_res_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_L2CAP_PCB *
+                            MEM_ALIGN_SIZE(sizeof(struct l2cap_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_L2CAP_PCB_LISTEN *
+                            MEM_ALIGN_SIZE(sizeof(struct l2cap_pcb_listen_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_L2CAP_SIG *
+                            MEM_ALIGN_SIZE(sizeof(struct l2cap_sig_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_L2CAP_SEG *
+                            MEM_ALIGN_SIZE(sizeof(struct l2cap_seg_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_SDP_PCB *
+                            MEM_ALIGN_SIZE(sizeof(struct sdp_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_SDP_RECORD *
+                            MEM_ALIGN_SIZE(sizeof(struct sdp_record_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_RFCOMM_PCB *
+                            MEM_ALIGN_SIZE(sizeof(struct rfcomm_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_RFCOMM_PCB_LISTEN *
+                            MEM_ALIGN_SIZE(sizeof(struct rfcomm_pcb_listen_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_OBEX *
+                            MEM_ALIGN_SIZE(sizeof(struct obex_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_AVDTP *
+                            MEM_ALIGN_SIZE(sizeof(struct avdtp_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_AVDTP_SEP *
+                            MEM_ALIGN_SIZE(sizeof(struct avdtp_sep_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_AVCTP *
+                            MEM_ALIGN_SIZE(sizeof(struct avctp_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_HFP *
+                            MEM_ALIGN_SIZE(sizeof(struct hfp_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_A2DP *
+                            MEM_ALIGN_SIZE(sizeof(struct a2dp_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_SPP *
+                            MEM_ALIGN_SIZE(sizeof(struct spp_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_PBAP *
+                            MEM_ALIGN_SIZE(sizeof(struct pbap_pcb_t) +
+                                    sizeof(struct bt_memp_t)) +
+                            MEMP_NUM_BT_PBUF *
+#endif
+                            MEM_ALIGN_SIZE(0x500))];
 
 /******************************************************************************
  * func name   : bt_memp_init
@@ -149,25 +149,20 @@ void bt_memp_init(void)
     uint16_t size;
 
     memp = (struct bt_memp_t *)&memp_memory[0];
-    for(i = 0; i < MEMP_BT_MAX; ++i)
-    {
+    for (i = 0; i < MEMP_BT_MAX; ++i) {
         size = MEM_ALIGN_SIZE(memp_sizes[i] + sizeof(struct bt_memp_t));
-        if(memp_num[i] > 0)
-        {
+        if (memp_num[i] > 0) {
             memp_tab[i] = memp;
             m = memp;
 
-            for(j = 0; j < memp_num[i]; ++j)
-            {
+            for (j = 0; j < memp_num[i]; ++j) {
                 m->next = (struct bt_memp_t *)MEM_ALIGN((uint8_t *)m + size);
                 memp = m;
                 m = m->next;
             }
             memp->next = NULL;
             memp = m;
-        }
-        else
-        {
+        } else {
             memp_tab[i] = NULL;
         }
     }
@@ -185,8 +180,7 @@ void *bt_memp_malloc(bt_memp_t type)
 
     memp = memp_tab[type];
 
-    if(memp != NULL)
-    {
+    if (memp != NULL) {
         memp_tab[type] = memp->next;
         memp->next = NULL;
 
@@ -194,9 +188,7 @@ void *bt_memp_malloc(bt_memp_t type)
         /* initialize memp memory with zeroes */
         memset(mem, 0, memp_sizes[type]);
         return mem;
-    }
-    else
-    {
+    } else {
         return NULL;
     }
 }
@@ -212,8 +204,7 @@ void bt_memp_free(bt_memp_t type, void *mem)
 {
     struct bt_memp_t *memp;
 
-    if(mem == NULL)
-    {
+    if (mem == NULL) {
         return;
     }
     memp = (struct bt_memp_t *)((uint8_t *)mem - sizeof(struct bt_memp_t));

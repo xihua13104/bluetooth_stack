@@ -41,7 +41,20 @@
 #define PROFILE_AVRCP_ENABLE 0
 /******************************************************************************************************************************/
 
-
+/***********   bluetooth module option *************************************************************************************/
+#define BT_DRIVER_ENABLE
+#define BT_HCI_ENABLE
+#define BT_L2CAP_ENABLE
+#define BT_SDP_ENABLE
+#define BT_RFCOMM_ENABLE
+#define BT_OBEX_ENABLE
+#define BT_AVCTP_ENABLE
+#define BT_AVDTP_ENALBE
+#define BT_AVRCP_ENABLE
+#define BT_HFP_ENABLE
+#define BT_A2DP_ENABLE
+#define BT_SPP_EANBLE
+#define BT_PBAP_ENABLE
 
 /*********** debug switch *****************************************************************************************************/
 /*****************************************************************************

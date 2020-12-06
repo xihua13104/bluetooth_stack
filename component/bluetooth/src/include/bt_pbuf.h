@@ -12,11 +12,11 @@
 
 #include "bt_common.h"
 
-#define BT_PBUF_TRANSPORT_H2 0x01/** Bluetooth H2(USB D+/D-) transport */
-#define BT_PBUF_TRANSPORT_H4 0x02/** Bluetooth H4(UART TX/RX/CTS/RTS) transport */
-#define BT_PBUF_TRANSPORT_H5 0x03/** Bluetooth H5(UART TX/RX) transport */
+#define BT_PBUF_TRANSPORT_H2 0x01  /** Bluetooth H2(USB D+/D-) transport */
+#define BT_PBUF_TRANSPORT_H4 0x02  /** Bluetooth H4(UART TX/RX/CTS/RTS) transport */
+#define BT_PBUF_TRANSPORT_H5 0x03  /** Bluetooth H5(UART TX/RX) transport */
 #define BT_PBUF_TRANSPORT_BCSP 0x04/** Bluetooth BCSP(UART TX/RX) transport */
-#define BT_PBUF_RAW 0x05/** Bluetooth RAW packet */
+#define BT_PBUF_RAW 0x05           /** Bluetooth RAW packet */
 
 
 typedef enum

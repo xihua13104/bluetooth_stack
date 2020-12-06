@@ -1,0 +1,13 @@
+.\objects\sbc.o: ..\..\component\bluetooth\third_party_lib\sbc\sbc\sbc.c
+.\objects\sbc.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\sbc.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\errno.h
+.\objects\sbc.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\objects\sbc.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\objects\sbc.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\objects\sbc.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\sbc.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\limits.h
+.\objects\sbc.o: ..\..\component\bluetooth\third_party_lib\sbc\sbc\sbc_math.h
+.\objects\sbc.o: ..\..\component\bluetooth\third_party_lib\sbc\sbc\sbc_tables.h
+.\objects\sbc.o: ..\..\component\bluetooth\third_party_lib\sbc\sbc\sbc.h
+.\objects\sbc.o: ..\..\component\bluetooth\third_party_lib\sbc\sbc\sbc_private.h
+.\objects\sbc.o: ..\..\component\bluetooth\third_party_lib\sbc\sbc\sbc_primitives.h

@@ -31,127 +31,121 @@ struct bt_pbuf_t *bt_pbuf_alloc(uint8_t layer, uint16_t length, bt_pbuf_type_e t
     BT_PBUF_TRACE_DEBUG("bt_pbuf_alloc(length=%d)\n", length);
 
     /* determine header offset */
-    switch (layer)
-    {
-    case BT_PBUF_TRANSPORT_H4:
-		offset = 1;
-		break;
-    case BT_PBUF_RAW:
-        /** 没有字节偏移 */
-        offset = 0;
-        break;
-    default:
-        BT_ASSERT("bt_pbuf_alloc: bad bt_pbuf_t layer\n", 0);
-        return NULL;
+    switch (layer) {
+        case BT_PBUF_TRANSPORT_H4:
+            offset = 1;
+            break;
+        case BT_PBUF_RAW:
+            /** 没有字节偏移 */
+            offset = 0;
+            break;
+        default:
+            BT_ASSERT("bt_pbuf_alloc: bad bt_pbuf_t layer\n", 0);
+            return NULL;
     }
 
-    switch (type)
-    {
-    case BT_PBUF_POOL:
-        /* allocate head of bt_pbuf_t chain into p */
-        p = (struct bt_pbuf_t *)bt_memp_malloc(MEMP_BT_PBUF_POOL);
+    switch (type) {
+        case BT_PBUF_POOL:
+            /* allocate head of bt_pbuf_t chain into p */
+            p = (struct bt_pbuf_t *)bt_memp_malloc(MEMP_BT_PBUF_POOL);
 
-        BT_PBUF_TRACE_DEBUG("bt_pbuf_alloc: allocated bt_pbuf_t %p\n", (void *)p);
+            BT_PBUF_TRACE_DEBUG("bt_pbuf_alloc: allocated bt_pbuf_t %p\n", (void *)p);
 
-        if (p == NULL)
-        {
-            return NULL;
-        }
-        p->type = type;
-        p->next = NULL;
-
-        /* make the payload pointer point 'offset' bytes into bt_pbuf_t data memory */
-        p->payload = MEM_ALIGN((void *)((uint8_t *)p + (SIZEOF_STRUCT_PBUF + offset)));
-        BT_ASSERT("bt_pbuf_alloc: bt_pbuf_t p->payload properly aligned\n",
-                  ((mem_ptr_t)p->payload % MEM_ALIGNMENT) == 0);
-        /* the total length of the bt_pbuf_t chain is the requested size */
-        p->tot_len = length;
-        /* set the length of the first bt_pbuf_t in the chain */
-        p->len = BT_MIN(length, PBUF_POOL_BUFSIZE_ALIGNED - MEM_ALIGN_SIZE(offset));
-        BT_ASSERT("check p->payload + p->len does not overflow bt_pbuf_t\n",
-                  ((uint8_t*)p->payload + p->len <=
-                   (uint8_t*)p + SIZEOF_STRUCT_PBUF + PBUF_POOL_BUFSIZE_ALIGNED));
-        BT_ASSERT("PBUF_POOL_BUFSIZE must be bigger than MEM_ALIGNMENT\n",
-                  (PBUF_POOL_BUFSIZE_ALIGNED - MEM_ALIGN_SIZE(offset)) > 0 );
-        /* set reference count (needed here in case we fail) */
-        p->ref = 1;
-
-        /* now allocate the tail of the bt_pbuf_t chain */
-
-        /* remember first bt_pbuf_t for linkage in next iteration */
-        r = p;
-        /* remaining length to be allocated */
-        rem_len = length - p->len;
-        /* any remaining pbufs to be allocated? */
-        while (rem_len > 0)
-        {
-            q = (struct bt_pbuf_t *)bt_memp_malloc(MEMP_BT_PBUF_POOL);
-            if (q == NULL)
-            {
-                /* free chain so far allocated */
-                bt_pbuf_free(p);
-                /* bail out unsuccessfully */
+            if (p == NULL) {
                 return NULL;
             }
-            q->type = type;
-            q->flags = 0;
-            q->next = NULL;
-            /* make previous bt_pbuf_t point to this bt_pbuf_t */
-            r->next = q;
-            /* set total length of this bt_pbuf_t and next in chain */
-            BT_ASSERT("rem_len < max_uint16_t\n", rem_len < 0xffff);
-            q->tot_len = (uint16_t)rem_len;
-            /* this bt_pbuf_t length is pool size, unless smaller sized tail */
-            q->len = BT_MIN((uint16_t)rem_len, PBUF_POOL_BUFSIZE_ALIGNED);
-            q->payload = (void *)((uint8_t *)q + SIZEOF_STRUCT_PBUF);
-            BT_ASSERT("bt_pbuf_alloc: bt_pbuf_t q->payload properly aligned\n",
-                      ((mem_ptr_t)q->payload % MEM_ALIGNMENT) == 0);
+            p->type = type;
+            p->next = NULL;
+
+            /* make the payload pointer point 'offset' bytes into bt_pbuf_t data memory */
+            p->payload = MEM_ALIGN((void *)((uint8_t *)p + (SIZEOF_STRUCT_PBUF + offset)));
+            BT_ASSERT("bt_pbuf_alloc: bt_pbuf_t p->payload properly aligned\n",
+                      ((mem_ptr_t)p->payload % MEM_ALIGNMENT) == 0);
+            /* the total length of the bt_pbuf_t chain is the requested size */
+            p->tot_len = length;
+            /* set the length of the first bt_pbuf_t in the chain */
+            p->len = BT_MIN(length, PBUF_POOL_BUFSIZE_ALIGNED - MEM_ALIGN_SIZE(offset));
             BT_ASSERT("check p->payload + p->len does not overflow bt_pbuf_t\n",
-                      ((uint8_t*)p->payload + p->len <=
-                       (uint8_t*)p + SIZEOF_STRUCT_PBUF + PBUF_POOL_BUFSIZE_ALIGNED));
-            q->ref = 1;
-            /* calculate remaining length to be allocated */
-            rem_len -= q->len;
-            /* remember this bt_pbuf_t for linkage in next iteration */
-            r = q;
+                      ((uint8_t *)p->payload + p->len <=
+                       (uint8_t *)p + SIZEOF_STRUCT_PBUF + PBUF_POOL_BUFSIZE_ALIGNED));
+            BT_ASSERT("PBUF_POOL_BUFSIZE must be bigger than MEM_ALIGNMENT\n",
+                      (PBUF_POOL_BUFSIZE_ALIGNED - MEM_ALIGN_SIZE(offset)) > 0);
+            /* set reference count (needed here in case we fail) */
+            p->ref = 1;
+
+            /* now allocate the tail of the bt_pbuf_t chain */
+
+            /* remember first bt_pbuf_t for linkage in next iteration */
+            r = p;
+            /* remaining length to be allocated */
+            rem_len = length - p->len;
+            /* any remaining pbufs to be allocated? */
+            while (rem_len > 0) {
+                q = (struct bt_pbuf_t *)bt_memp_malloc(MEMP_BT_PBUF_POOL);
+                if (q == NULL) {
+                    /* free chain so far allocated */
+                    bt_pbuf_free(p);
+                    /* bail out unsuccessfully */
+                    return NULL;
+                }
+                q->type = type;
+                q->flags = 0;
+                q->next = NULL;
+                /* make previous bt_pbuf_t point to this bt_pbuf_t */
+                r->next = q;
+                /* set total length of this bt_pbuf_t and next in chain */
+                BT_ASSERT("rem_len < max_uint16_t\n", rem_len < 0xffff);
+                q->tot_len = (uint16_t)rem_len;
+                /* this bt_pbuf_t length is pool size, unless smaller sized tail */
+                q->len = BT_MIN((uint16_t)rem_len, PBUF_POOL_BUFSIZE_ALIGNED);
+                q->payload = (void *)((uint8_t *)q + SIZEOF_STRUCT_PBUF);
+                BT_ASSERT("bt_pbuf_alloc: bt_pbuf_t q->payload properly aligned\n",
+                          ((mem_ptr_t)q->payload % MEM_ALIGNMENT) == 0);
+                BT_ASSERT("check p->payload + p->len does not overflow bt_pbuf_t\n",
+                          ((uint8_t *)p->payload + p->len <=
+                           (uint8_t *)p + SIZEOF_STRUCT_PBUF + PBUF_POOL_BUFSIZE_ALIGNED));
+                q->ref = 1;
+                /* calculate remaining length to be allocated */
+                rem_len -= q->len;
+                /* remember this bt_pbuf_t for linkage in next iteration */
+                r = q;
+            }
+            /* end of chain */
+            /*r->next = NULL;*/
+
+            break;
+        case BT_PBUF_RAM: {
+            mem_size_t alloc_len = MEM_ALIGN_SIZE(SIZEOF_STRUCT_PBUF + offset) + MEM_ALIGN_SIZE(length);
+
+            /* bug #50040: Check for integer overflow when calculating alloc_len */
+            if (alloc_len < MEM_ALIGN_SIZE(length)) {
+                BT_PBUF_TRACE_ERROR("ERROR:file[%s],function[%s],line[%d] alloc_len < MEM_ALIGN_SIZE(length)\n", __FILE__, __FUNCTION__,
+                                    __LINE__);
+                return NULL;
+            }
+
+            /* If bt_pbuf_t is to be allocated in RAM, allocate memory for it. */
+            p = (struct bt_pbuf_t *)bt_mem_malloc(alloc_len);
         }
-        /* end of chain */
-        /*r->next = NULL;*/
 
-        break;
-    case BT_PBUF_RAM:
-    {
-        mem_size_t alloc_len = MEM_ALIGN_SIZE(SIZEOF_STRUCT_PBUF + offset) + MEM_ALIGN_SIZE(length);
-
-        /* bug #50040: Check for integer overflow when calculating alloc_len */
-        if (alloc_len < MEM_ALIGN_SIZE(length))
-        {
-            BT_PBUF_TRACE_ERROR("ERROR:file[%s],function[%s],line[%d] alloc_len < MEM_ALIGN_SIZE(length)\n",__FILE__,__FUNCTION__,__LINE__);
+        if (p == NULL) {
+            BT_PBUF_TRACE_ERROR("ERROR:file[%s],function[%s],line[%d] alloc_len < MEM_ALIGN_SIZE(length)\n", __FILE__, __FUNCTION__,
+                                __LINE__);
             return NULL;
         }
+            /* Set up internal structure of the bt_pbuf_t. */
+        p->payload = MEM_ALIGN((void *)((uint8_t *)p + SIZEOF_STRUCT_PBUF + offset));
+        p->len = p->tot_len = length;
+        p->next = NULL;
+        p->type = type;
 
-        /* If bt_pbuf_t is to be allocated in RAM, allocate memory for it. */
-        p = (struct bt_pbuf_t*)bt_mem_malloc(alloc_len);
-    }
+        BT_ASSERT("bt_pbuf_alloc: bt_pbuf_t->payload properly aligned\n",
+                  ((mem_ptr_t)p->payload % MEM_ALIGNMENT) == 0);
+        break;
 
-    if (p == NULL)
-    {
-    	BT_PBUF_TRACE_ERROR("ERROR:file[%s],function[%s],line[%d] alloc_len < MEM_ALIGN_SIZE(length)\n",__FILE__,__FUNCTION__,__LINE__);
-        return NULL;
-    }
-        /* Set up internal structure of the bt_pbuf_t. */
-    p->payload = MEM_ALIGN((void *)((uint8_t *)p + SIZEOF_STRUCT_PBUF + offset));
-    p->len = p->tot_len = length;
-    p->next = NULL;
-    p->type = type;
-
-    BT_ASSERT("bt_pbuf_alloc: bt_pbuf_t->payload properly aligned\n",
-              ((mem_ptr_t)p->payload % MEM_ALIGNMENT) == 0);
-    break;
-
-    default:
-        BT_ASSERT("bt_pbuf_alloc: erroneous type\n", 0);
-        return NULL;
+        default:
+            BT_ASSERT("bt_pbuf_alloc: erroneous type\n", 0);
+            return NULL;
     }
     /* set reference count */
     p->ref = 1;
@@ -181,9 +175,8 @@ void bt_pbuf_realloc(struct bt_pbuf_t *p, uint16_t new_len)
               p->type == BT_PBUF_RAM);
 
     /* desired length larger than current length? */
-    if (new_len >= p->tot_len)
-    {
-        BT_PBUF_TRACE_ERROR("ERROR:file[%s],function[%s],line[%d] new_len >= p->tot_len\n",__FILE__,__FUNCTION__,__LINE__);
+    if (new_len >= p->tot_len) {
+        BT_PBUF_TRACE_ERROR("ERROR:file[%s],function[%s],line[%d] new_len >= p->tot_len\n", __FILE__, __FUNCTION__, __LINE__);
         /* enlarging not yet supported */
         return;
     }
@@ -196,8 +189,7 @@ void bt_pbuf_realloc(struct bt_pbuf_t *p, uint16_t new_len)
     rem_len = new_len;
     q = p;
     /* should this bt_pbuf_t be kept? */
-    while (rem_len > q->len)
-    {
+    while (rem_len > q->len) {
         /* decrease remaining length by bt_pbuf_t length */
         rem_len -= q->len;
         /* decrease total length indicator */
@@ -213,8 +205,7 @@ void bt_pbuf_realloc(struct bt_pbuf_t *p, uint16_t new_len)
     /* shrink allocated memory for BT_PBUF_RAM */
     /* (other types merely adjust their length fields */
     if ((q->type == BT_PBUF_RAM) && (rem_len != q->len)
-       )
-    {
+       ) {
         /* reallocate and adjust the length of the bt_pbuf_t that will be split */
         q = (struct bt_pbuf_t *)bt_mem_trim(q, (uint16_t)((uint8_t *)q->payload - (uint8_t *)q) + rem_len);
         BT_ASSERT("mem_trim returned q == NULL\n", q != NULL);
@@ -224,8 +215,7 @@ void bt_pbuf_realloc(struct bt_pbuf_t *p, uint16_t new_len)
     q->tot_len = q->len;
 
     /* any remaining pbufs in chain? */
-    if (q->next != NULL)
-    {
+    if (q->next != NULL) {
         /* free remaining pbufs in chain */
         bt_pbuf_free(q->next);
     }
@@ -242,19 +232,15 @@ static uint8_t pbuf_header_impl(struct bt_pbuf_t *p, int16_t header_size_increme
     uint16_t increment_magnitude;
 
     BT_ASSERT("p != NULL\n", p != NULL);
-    if ((header_size_increment == 0) || (p == NULL))
-    {
+    if ((header_size_increment == 0) || (p == NULL)) {
         return 0;
     }
 
-    if (header_size_increment < 0)
-    {
-        increment_magnitude = (uint16_t)-header_size_increment;
+    if (header_size_increment < 0) {
+        increment_magnitude = (uint16_t) - header_size_increment;
         /* Check that we aren't going to move off the end of the bt_pbuf_t */
         BT_ERROR("increment_magnitude <= p->len\n", (increment_magnitude <= p->len), return 1;);
-    }
-    else
-    {
+    } else {
         increment_magnitude = (uint16_t)header_size_increment;
     }
 
@@ -263,13 +249,11 @@ static uint8_t pbuf_header_impl(struct bt_pbuf_t *p, int16_t header_size_increme
     payload = p->payload;
 
     /* bt_pbuf_t types containing payloads? */
-    if (type == BT_PBUF_RAM || type == BT_PBUF_POOL)
-    {
+    if (type == BT_PBUF_RAM || type == BT_PBUF_POOL) {
         /* set new payload pointer */
         p->payload = (uint8_t *)p->payload - header_size_increment;
         /* boundary check fails? */
-        if ((uint8_t *)p->payload < (uint8_t *)p + SIZEOF_STRUCT_PBUF)
-        {
+        if ((uint8_t *)p->payload < (uint8_t *)p + SIZEOF_STRUCT_PBUF) {
             BT_PBUF_TRACE_ERROR("bt_pbuf_header: failed as %p < %p (not enough space for new header size)\n",
                                 (void *)p->payload, (void *)((uint8_t *)p + SIZEOF_STRUCT_PBUF));
 
@@ -280,11 +264,9 @@ static uint8_t pbuf_header_impl(struct bt_pbuf_t *p, int16_t header_size_increme
             return 1;
         }
         /* bt_pbuf_t types referring to external payloads? */
-    }
-    else
-    {
+    } else {
         /* Unknown type */
-        BT_PBUF_TRACE_ERROR("ERROR:file[%s],function[%s],line[%d] bad bt_pbuf_t type\n",__FILE__,__FUNCTION__,__LINE__);
+        BT_PBUF_TRACE_ERROR("ERROR:file[%s],function[%s],line[%d] bad bt_pbuf_t type\n", __FILE__, __FUNCTION__, __LINE__);
         return 1;
     }
     /* modify bt_pbuf_t length fields */
@@ -334,8 +316,7 @@ uint8_t bt_pbuf_free(struct bt_pbuf_t *p)
     struct bt_pbuf_t *q;
     uint8_t count;
 
-    if (p == NULL)
-    {
+    if (p == NULL) {
         /* if assertions are disabled, proceed with debug output */
         BT_PBUF_TRACE_DEBUG("bt_pbuf_free(p == NULL) was called.\n");
 
@@ -350,8 +331,7 @@ uint8_t bt_pbuf_free(struct bt_pbuf_t *p)
     count = 0;
     /* de-allocate all consecutive pbufs from the head of the chain that
      * obtain a zero reference count after decrementing*/
-    while (p != NULL)
-    {
+    while (p != NULL) {
         uint16_t ref;
 
         /* Since decrementing ref cannot be guaranteed to be a single machine operation
@@ -362,8 +342,7 @@ uint8_t bt_pbuf_free(struct bt_pbuf_t *p)
         /* decrease reference count (number of pointers to bt_pbuf_t) */
         ref = --(p->ref);
         /* this bt_pbuf_t is no longer referenced to? */
-        if (ref == 0)
-        {
+        if (ref == 0) {
             /* remember next bt_pbuf_t in chain for next iteration */
             q = p->next;
             BT_PBUF_TRACE_DEBUG("bt_pbuf_free: deallocating %p\n", (void *)p);
@@ -371,13 +350,10 @@ uint8_t bt_pbuf_free(struct bt_pbuf_t *p)
 
             {
                 /* is this a bt_pbuf_t from the pool? */
-                if (type == BT_PBUF_POOL)
-                {
+                if (type == BT_PBUF_POOL) {
                     bt_memp_free(MEMP_BT_PBUF_POOL, p);
                     /* is this a ROM or RAM referencing bt_pbuf_t? */
-                }
-                else
-                {
+                } else {
                     bt_mem_free(p);
                 }
             }
@@ -386,9 +362,7 @@ uint8_t bt_pbuf_free(struct bt_pbuf_t *p)
             p = q;
             /* p->ref > 0, this bt_pbuf_t is still referenced to */
             /* (and so the remaining pbufs in chain as well) */
-        }
-        else
-        {
+        } else {
             BT_PBUF_TRACE_DEBUG("bt_pbuf_free: %p has ref %d, ending here.\n", (void *)p, ref);
             /* stop walking through the chain */
             p = NULL;
@@ -408,20 +382,19 @@ uint8_t bt_pbuf_free(struct bt_pbuf_t *p)
 void bt_pbuf_ref(struct bt_pbuf_t *p)
 {
     /* bt_pbuf_t given? */
-    if (p != NULL)
-    {
+    if (p != NULL) {
         SYS_ARCH_INC(p->ref, 1);
         BT_ASSERT("bt_pbuf_t ref overflow\n", p->ref > 0);
     }
 }
 
 
- /******************************************************************************
- * func name   : bt_pbuf_cat
- * para        : head(IN)	--> 传入的头部pbuf
- 					 tail(IN)	--> 传入的尾部pbuf
- * return      : VOID
- * description : 把两个pbuf链表组合在一起
+/******************************************************************************
+* func name   : bt_pbuf_cat
+* para        : head(IN)	--> 传入的头部pbuf
+					 tail(IN)	--> 传入的尾部pbuf
+* return      : VOID
+* description : 把两个pbuf链表组合在一起
 ******************************************************************************/
 void bt_pbuf_cat(struct bt_pbuf_t *head, struct bt_pbuf_t *tail)
 {
@@ -431,8 +404,7 @@ void bt_pbuf_cat(struct bt_pbuf_t *head, struct bt_pbuf_t *tail)
              ((head != NULL) && (tail != NULL)), return;);
 
     /* proceed to last bt_pbuf_t of chain */
-    for (p = head; p->next != NULL; p = p->next)
-    {
+    for (p = head; p->next != NULL; p = p->next) {
         /* add total length of second chain to all totals of first chain */
         p->tot_len += tail->tot_len;
     }
@@ -465,11 +437,11 @@ void bt_pbuf_chain(struct bt_pbuf_t *head, struct bt_pbuf_t *tail)
 }
 
 
- /******************************************************************************
- * func name   : bt_pbuf_dechain
- * para        : p(IN)	--> 传入的pbuf链表
- * return      : 返回dechain的链表
- * description : 把链表的第一个pbuf从链表中剔除
+/******************************************************************************
+* func name   : bt_pbuf_dechain
+* para        : p(IN)	--> 传入的pbuf链表
+* return      : 返回dechain的链表
+* description : 把链表的第一个pbuf从链表中剔除
 ******************************************************************************/
 struct bt_pbuf_t *bt_pbuf_dechain(struct bt_pbuf_t *p)
 {
@@ -478,8 +450,7 @@ struct bt_pbuf_t *bt_pbuf_dechain(struct bt_pbuf_t *p)
     /* tail */
     q = p->next;
     /* bt_pbuf_t has successor in chain? */
-    if (q != NULL)
-    {
+    if (q != NULL) {
         /* assert tot_len invariant: (p->tot_len == p->len + (p->next? p->next->tot_len: 0) */
         BT_ASSERT("p->tot_len == p->len + q->tot_len\n", q->tot_len == p->tot_len - p->len);
         /* enforce invariant if assertion is disabled */
@@ -492,8 +463,7 @@ struct bt_pbuf_t *bt_pbuf_dechain(struct bt_pbuf_t *p)
         BT_PBUF_TRACE_DEBUG("bt_pbuf_dechain: unreferencing %p\n", (void *)q);
 
         tail_gone = bt_pbuf_free(q);
-        if (tail_gone > 0)
-        {
+        if (tail_gone > 0) {
             BT_PBUF_TRACE_DEBUG("bt_pbuf_dechain: deallocated %p (as it is no longer referenced)\n", (void *)q);
 
         }
@@ -516,10 +486,10 @@ struct bt_pbuf_t *bt_pbuf_dechain(struct bt_pbuf_t *p)
 ******************************************************************************/
 err_t bt_pbuf_copy(struct bt_pbuf_t *p_to, const struct bt_pbuf_t *p_from)
 {
-    uint16_t offset_to=0, offset_from=0, len;
+    uint16_t offset_to = 0, offset_from = 0, len;
 
     BT_PBUF_TRACE_DEBUG("bt_pbuf_copy(%p, %p)\n",
-                        (const void*)p_to, (const void*)p_from);
+                        (const void *)p_to, (const void *)p_from);
 
 
     /* is the target big enough to hold the source? */
@@ -527,52 +497,43 @@ err_t bt_pbuf_copy(struct bt_pbuf_t *p_to, const struct bt_pbuf_t *p_from)
              (p_from != NULL) && (p_to->tot_len >= p_from->tot_len)), return BT_ERR_ARG;);
 
     /* iterate through bt_pbuf_t chain */
-    do
-    {
+    do {
         /* copy one part of the original chain */
-        if ((p_to->len - offset_to) >= (p_from->len - offset_from))
-        {
+        if ((p_to->len - offset_to) >= (p_from->len - offset_from)) {
             /* complete current p_from fits into current p_to */
             len = p_from->len - offset_from;
-        }
-        else
-        {
+        } else {
             /* current p_from does not fit into current p_to */
             len = p_to->len - offset_to;
         }
-        memcpy((uint8_t*)p_to->payload + offset_to, (uint8_t*)p_from->payload + offset_from, len);
+        memcpy((uint8_t *)p_to->payload + offset_to, (uint8_t *)p_from->payload + offset_from, len);
         offset_to += len;
         offset_from += len;
         BT_ASSERT("offset_to <= p_to->len\n", offset_to <= p_to->len);
         BT_ASSERT("offset_from <= p_from->len\n", offset_from <= p_from->len);
-        if (offset_from >= p_from->len)
-        {
+        if (offset_from >= p_from->len) {
             /* on to next p_from (if any) */
             offset_from = 0;
             p_from = p_from->next;
         }
-        if (offset_to == p_to->len)
-        {
+        if (offset_to == p_to->len) {
             /* on to next p_to (if any) */
             offset_to = 0;
             p_to = p_to->next;
             BT_ERROR("p_to != NULL\n", (p_to != NULL) || (p_from == NULL), return BT_ERR_ARG;);
         }
 
-        if ((p_from != NULL) && (p_from->len == p_from->tot_len))
-        {
+        if ((p_from != NULL) && (p_from->len == p_from->tot_len)) {
             /* don't copy more than one packet! */
             BT_ERROR("bt_pbuf_copy() does not allow packet queues!\n",
                      (p_from->next == NULL), return BT_ERR_VAL;);
         }
-        if ((p_to != NULL) && (p_to->len == p_to->tot_len))
-        {
+        if ((p_to != NULL) && (p_to->len == p_to->tot_len)) {
             /* don't copy more than one packet! */
             BT_ERROR("bt_pbuf_copy() does not allow packet queues!\n",
                      (p_to->next == NULL), return BT_ERR_VAL;);
         }
-    }
-    while (p_from);
+    } while (p_from);
 
     BT_PBUF_TRACE_DEBUG("bt_pbuf_copy: end of chain reached.\n");
     return BT_ERR_OK;
@@ -599,29 +560,23 @@ uint16_t bt_pbuf_copy_partial(const struct bt_pbuf_t *buf, void *dataptr, uint16
 
     left = 0;
 
-    if ((buf == NULL) || (dataptr == NULL))
-    {
+    if ((buf == NULL) || (dataptr == NULL)) {
         return 0;
     }
 
     /* Note some systems use byte copy if dataptr or one of the bt_pbuf_t payload pointers are unaligned. */
-    for (p = buf; len != 0 && p != NULL; p = p->next)
-    {
-        if ((offset != 0) && (offset >= p->len))
-        {
+    for (p = buf; len != 0 && p != NULL; p = p->next) {
+        if ((offset != 0) && (offset >= p->len)) {
             /* don't copy from this buffer -> on to the next */
             offset -= p->len;
-        }
-        else
-        {
+        } else {
             /* copy from this buffer. maybe only partially. */
             buf_copy_len = p->len - offset;
-            if (buf_copy_len > len)
-            {
+            if (buf_copy_len > len) {
                 buf_copy_len = len;
             }
             /* copy the necessary parts of the buffer */
-            memcpy(&((char*)dataptr)[left], &((char*)p->payload)[offset], buf_copy_len);
+            memcpy(&((char *)dataptr)[left], &((char *)p->payload)[offset], buf_copy_len);
             copied_total += buf_copy_len;
             left += buf_copy_len;
             len -= buf_copy_len;
@@ -633,19 +588,17 @@ uint16_t bt_pbuf_copy_partial(const struct bt_pbuf_t *buf, void *dataptr, uint16
 
 
 /* Actual implementation of bt_pbuf_skip() but returning const pointer... */
-static const struct bt_pbuf_t*pbuf_skip_const(const struct bt_pbuf_t* in, uint16_t in_offset, uint16_t* out_offset)
+static const struct bt_pbuf_t *pbuf_skip_const(const struct bt_pbuf_t *in, uint16_t in_offset, uint16_t *out_offset)
 {
     uint16_t offset_left = in_offset;
-    const struct bt_pbuf_t* q = in;
+    const struct bt_pbuf_t *q = in;
 
     /* get the correct bt_pbuf_t */
-    while ((q != NULL) && (q->len <= offset_left))
-    {
+    while ((q != NULL) && (q->len <= offset_left)) {
         offset_left -= q->len;
         q = q->next;
     }
-    if (out_offset != NULL)
-    {
+    if (out_offset != NULL) {
         *out_offset = offset_left;
     }
     return q;
@@ -660,10 +613,10 @@ static const struct bt_pbuf_t*pbuf_skip_const(const struct bt_pbuf_t* in, uint16
  * @param out_offset resulting offset in the returned bt_pbuf_t
  * @return the bt_pbuf_t in the queue where the offset is
  */
-struct bt_pbuf_t* bt_pbuf_skip(struct bt_pbuf_t* in, uint16_t in_offset, uint16_t* out_offset)
+struct bt_pbuf_t *bt_pbuf_skip(struct bt_pbuf_t *in, uint16_t in_offset, uint16_t *out_offset)
 {
-    const struct bt_pbuf_t* out = pbuf_skip_const(in, in_offset, out_offset);
-    return BT_CONST_CAST(struct bt_pbuf_t*, out);
+    const struct bt_pbuf_t *out = pbuf_skip_const(in, in_offset, out_offset);
+    return BT_CONST_CAST(struct bt_pbuf_t *, out);
 }
 
 
@@ -686,23 +639,20 @@ err_t bt_pbuf_take(struct bt_pbuf_t *buf, const void *dataptr, uint16_t len)
     BT_ERROR("bt_pbuf_take: invalid dataptr\n", (dataptr != NULL), return BT_ERR_ARG;);
     BT_ERROR("bt_pbuf_take: buf not large enough\n", (buf->tot_len >= len), return BT_ERR_MEM;);
 
-    if ((buf == NULL) || (dataptr == NULL) || (buf->tot_len < len))
-    {
+    if ((buf == NULL) || (dataptr == NULL) || (buf->tot_len < len)) {
         return BT_ERR_ARG;
     }
 
     /* Note some systems use byte copy if dataptr or one of the bt_pbuf_t payload pointers are unaligned. */
-    for (p = buf; total_copy_len != 0; p = p->next)
-    {
+    for (p = buf; total_copy_len != 0; p = p->next) {
         BT_ASSERT("bt_pbuf_take: invalid bt_pbuf_t\n", p != NULL);
         buf_copy_len = total_copy_len;
-        if (buf_copy_len > p->len)
-        {
+        if (buf_copy_len > p->len) {
             /* this bt_pbuf_t cannot hold all remaining data */
             buf_copy_len = p->len;
         }
         /* copy the necessary parts of the buffer */
-        memcpy(p->payload, &((const char*)dataptr)[copied_total], buf_copy_len);
+        memcpy(p->payload, &((const char *)dataptr)[copied_total], buf_copy_len);
         total_copy_len -= buf_copy_len;
         copied_total += buf_copy_len;
     }
@@ -724,20 +674,18 @@ err_t bt_pbuf_take(struct bt_pbuf_t *buf, const void *dataptr, uint16_t len)
 err_t bt_pbuf_take_at(struct bt_pbuf_t *buf, const void *dataptr, uint16_t len, uint16_t offset)
 {
     uint16_t target_offset;
-    struct bt_pbuf_t* q = bt_pbuf_skip(buf, offset, &target_offset);
+    struct bt_pbuf_t *q = bt_pbuf_skip(buf, offset, &target_offset);
 
     /* return requested data if bt_pbuf_t is OK */
-    if ((q != NULL) && (q->tot_len >= target_offset + len))
-    {
+    if ((q != NULL) && (q->tot_len >= target_offset + len)) {
         uint16_t remaining_len = len;
-        const uint8_t* src_ptr = (const uint8_t*)dataptr;
+        const uint8_t *src_ptr = (const uint8_t *)dataptr;
         /* copy the part that goes into the first bt_pbuf_t */
         uint16_t first_copy_len = BT_MIN(q->len - target_offset, len);
-        memcpy(((uint8_t*)q->payload) + target_offset, dataptr, first_copy_len);
+        memcpy(((uint8_t *)q->payload) + target_offset, dataptr, first_copy_len);
         remaining_len -= first_copy_len;
         src_ptr += first_copy_len;
-        if (remaining_len > 0)
-        {
+        if (remaining_len > 0) {
             return bt_pbuf_take(q->next, src_ptr, remaining_len);
         }
         return BT_ERR_OK;
