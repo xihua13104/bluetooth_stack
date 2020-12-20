@@ -12,7 +12,7 @@
 
 #define BT_MM_HEADER_SIZE  (sizeof(bt_mm_header_t))
 #define BT_MM_FOOTER_SIZE  (4)
-#define BT_MM_FOOTER 	   (0xABCDDCBA)
+#define BT_MM_FOOTER 	   (0xABCDABCD)
 
 #define BT_MM_SIZE_MASK    (0x3FFFFFFF)
 #define BT_MM_STATE_MASK   (0xC0000000)

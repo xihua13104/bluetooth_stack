@@ -24,8 +24,8 @@ uint8_t key3_show[OLED_SHOW_SIZE];
 #define BT_TX_BUFFER_SIZE (1024 * 5)
 #define BT_RX_BUFFER_SIZE (1024 * 5)
 
-uint8_t tx_buf[BT_TX_BUFFER_SIZE];
-uint8_t rx_buf[BT_RX_BUFFER_SIZE];
+//uint8_t tx_buf[BT_TX_BUFFER_SIZE];
+//uint8_t rx_buf[BT_RX_BUFFER_SIZE];
 
 void operate_stauts_oled_show(uint8_t *func, uint8_t *operate, uint8_t *status, uint8_t *key1, uint8_t *value1,
                               uint8_t *key2, uint8_t *value2, uint8_t *key3, uint8_t *value3)
@@ -1135,14 +1135,14 @@ void bt_reset_chip(void)
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
+    GPIO_WriteBit(GPIOA, GPIO_Pin_7, Bit_RESET);
     hw_delay_ms(200);
-    GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_SET);
+    GPIO_WriteBit(GPIOA, GPIO_Pin_7, Bit_SET);
 }
 void board_init()
 {
@@ -1150,6 +1150,7 @@ void board_init()
     utimer_init();
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
     hw_uart_debug_init(115200);
+	hw_uart_hci_log_init(115200);
     hw_systick_init(SystemCoreClock / CONF_BSP_TICKS_PER_SEC);
 
     hw_button_init();
@@ -1158,11 +1159,10 @@ void board_init()
     hw_sht2x_init();
     hw_spi_flash_init();
     hw_usb_init();
+	USB_Cable_Config(1);
     file_system_init();
     bt_reset_chip();
 }
-
-
 
 void SysTick_Handler(void)
 {
@@ -1170,20 +1170,15 @@ void SysTick_Handler(void)
     utimer_polling();
 }
 
-
-
 extern struct phybusif_cb uart_if;
+
+uint8_t hci_reset_cmd[] = {0x04, 0x03, 0x0c, 0x00};
+
 int main()
 {
     static uint8_t led_on = 0;
     board_init();
-	bt_memory_init(BT_MEMORY_TX, tx_buf, BT_TX_BUFFER_SIZE);
-	bt_memory_init(BT_MEMORY_RX, rx_buf, BT_RX_BUFFER_SIZE);
-
-	uint8_t *ptr = bt_memory_allocate_packet(BT_MEMORY_TX, 20);
-	BT_ASSERT("ptr is invalid\r\n", ptr);
-	bt_memory_free_packet(BT_MEMORY_TX, ptr);
-#if 0
+	#if 1
     while (1) {
 
         //NVIC_DisableIRQ(USART2_IRQn);
@@ -1191,7 +1186,7 @@ int main()
         //NVIC_EnableIRQ(USART2_IRQn);
 
         if (sys_time - last_sys_time > 1000) {
-            printf("bt stack running\n");
+            //printf("bt stack running\n");
             last_sys_time = sys_time;
             l2cap_tmr();
             rfcomm_tmr();

@@ -74,7 +74,7 @@ static const uint16_t memp_num[MEMP_BT_MAX] = {
 };
 
 static uint8_t memp_memory[(
-#if 0
+#if 1
 							MEMP_NUM_HCI_PCB *
                             MEM_ALIGN_SIZE(sizeof(struct hci_pcb_t) +
                                     sizeof(struct bt_memp_t)) +

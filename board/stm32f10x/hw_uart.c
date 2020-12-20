@@ -7,7 +7,7 @@
 ******************************************************************************/
 
 #include "hw_uart.h"
-
+#include <stdio.h>
 
 #define UART1_MAX_REV	256
 uint8_t uart1_rev_buffer[UART1_MAX_REV];
@@ -172,4 +172,91 @@ void USART1_IRQHandler(void)
     }
 }
 
+/******************************************************************************
+ * func name   : hw_uart_debug_init
+ * para        : baud_rate(IN)  --> Baud rate of uart3
+ * return      : hw_uart_hci_log_init result
+ * description : Initialization of USART3.PB10->TX PB11->RX
+******************************************************************************/
+uint8_t hw_uart_hci_log_init(uint32_t baud_rate)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
+	USART_InitTypeDef USART_InitStructure;
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);	//USART3,GPIOB
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);	//USART3,GPIOB
+    USART_DeInit(USART3); 
+    //USART3_TX   PB10
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10; //PB10
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;	
+    GPIO_Init(GPIOB, &GPIO_InitStructure); 
+    //USART3_RX	  PB11
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(GPIOB, &GPIO_InitStructure); 
+ 
+    //Usart1 NVIC ??
+    NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=1 ;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;		
+    NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;			
+    NVIC_Init(&NVIC_InitStructure);
+ 
+    USART_InitStructure.USART_BaudRate = baud_rate;
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;
+    USART_InitStructure.USART_Parity = USART_Parity_No;
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;	
+    USART_Init(USART3, &USART_InitStructure);
+ 
+    USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
+    USART_Cmd(USART3, ENABLE);                    
 
+    return HW_ERR_OK;
+}
+
+void uart_bt_hci_log_send(uint8_t *buf,uint16_t len)
+{
+    uint16_t index;
+    for(index = 0; index < len ; index++)
+    {
+        /* Wait until the last send is complete, then send the data */
+        while(USART_GetFlagStatus(USART3, USART_FLAG_TC) == RESET);
+        USART_SendData(USART3,buf[index]);
+    }
+    while(USART_GetFlagStatus(USART3, USART_FLAG_TC) == RESET);
+	//hw_delay_ms(10);
+}
+
+#define BT_HCI_LOG_HEADER_LEGNTH 5 //header + direction + sizeof(log_length)
+
+void bt_hci_log(bt_hci_log_type_t type, uint8_t *log, uint16_t log_length)
+{
+	uint16_t data_tatal_length = 0;
+	uint16_t index = 0, i = 0;
+	uint8_t *buf = NULL;
+	uint8_t check_sum = 0;
+	data_tatal_length = BT_HCI_LOG_HEADER_LEGNTH + log_length + 1;//1:check sum
+	buf = (uint8_t *)malloc(data_tatal_length);
+	if (buf == NULL) {
+		return;
+	}
+	buf[index++] = 0xF5;
+	buf[index++] = 0x5A;
+	buf[index++] = type;
+	buf[index++] = log_length & 0xFF;
+	buf[index++] = (log_length >> 8) & 0xFF;
+	for (i = 0;i < log_length;index++, i++) {
+		buf[index] = log[i];
+	}
+	for (i = 0; i < data_tatal_length - 1;i++) {
+		check_sum += buf[i];
+	}
+	buf[index] = check_sum;
+
+	uart_bt_hci_log_send(buf, data_tatal_length);
+	
+	free(buf);
+}

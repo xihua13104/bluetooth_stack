@@ -112,6 +112,12 @@ void USB_Interrupts_Config(void)
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = USB_SUB_PRIO;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+	
+	NVIC_InitStructure.NVIC_IRQChannel = USB_HP_CAN1_TX_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 }
 
 /*******************************************************************************
@@ -122,7 +128,23 @@ void USB_Interrupts_Config(void)
 *******************************************************************************/
 void USB_Cable_Config (FunctionalState NewState)
 {
-    
+	GPIO_InitTypeDef GPIO_InitStructure;
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
+
+	/* PD3 输出 0 时 D+ 接上拉电阻工作于全速模式 */ 
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;	   /* 开漏输出 */
+	GPIO_Init(GPIOD, &GPIO_InitStructure);
+
+	if (NewState!=DISABLE)
+	{
+	GPIO_ResetBits(GPIOD, GPIO_Pin_3);	   //连接USB ,开发板上的USB_EN接的是PE3
+	}
+	else
+	{
+	GPIO_SetBits(GPIOD, GPIO_Pin_3);	//断开USB
+	}   
 }
 
 /*******************************************************************************

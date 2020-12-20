@@ -13,7 +13,7 @@
 #include "bt_timer.h"
 #include "bt_vendor_csr8x11.h"
 #include "bt_vendor_bcm43430a1.h"
-
+#include "hw_uart.h"
 /* The HCI LINK lists. */
 struct hci_link_t *hci_active_links;  /* List of all active HCI LINKs */
 struct hci_link_t *hci_tmp_link;
@@ -367,6 +367,7 @@ void hci_acl_input(struct bt_pbuf_t *p)
 
     //bt_pbuf_header(p, HCI_ACL_HDR_LEN);
     aclhdr = p->payload;
+	bt_hci_log(BT_HCI_LOG_ACL_IN, (uint8_t *)(p->payload), aclhdr->len + sizeof(struct hci_acl_hdr_t));
 
     //BT_HCI_TRACE_DEBUG("DEBUG:BT RX ACL LEN:%d\n",aclhdr->len);
     //bt_hex_dump(p->payload,aclhdr->len + HCI_ACL_HDR_LEN);
@@ -680,7 +681,7 @@ void hci_event_input(struct bt_pbuf_t *p)
     BT_UNUSED_ARG(ret);
 
     evhdr = p->payload;
-
+	bt_hci_log(BT_HCI_LOG_EVT, (uint8_t *)(p->payload), evhdr->len + sizeof(struct hci_event_hdr_t));
     //BT_HCI_TRACE_DEBUG("DEBUG:BT RX event (0x%x) LEN:%d\n",evhdr->code,p->tot_len);
     //bt_hex_dump(p->payload,evhdr->len + HCI_EVENT_HDR_LEN);
 
